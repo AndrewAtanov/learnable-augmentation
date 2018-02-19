@@ -1,2 +1,1 @@
-# dl-vae-project
-Learnable data augmentation via VAE.
+# Learnable data augmentation via VAE.
