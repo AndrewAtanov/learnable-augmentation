@@ -1,13 +1,6 @@
 import torch
 from torch import nn
-from torch.autograd import Variable
-
-
-def rnormal(mean, sigma):
-    eps = Variable(torch.randn(mean.shape))
-    if mean.data.is_cuda:
-        eps = eps.cuda()
-    return eps * sigma + mean
+from .vae import VAE, CVAE
 
 
 class Decoder(nn.Module):
@@ -32,10 +25,10 @@ class Decoder(nn.Module):
 
 
 class Encoder(nn.Module):
-    def __init__(self, z_dim, hidden_dim):
+    def __init__(self, z_dim, hidden_dim, input_dim=784):
         super(Encoder, self).__init__()
         self.features = nn.Sequential(
-            nn.Linear(784, hidden_dim),
+            nn.Linear(input_dim, hidden_dim),
             nn.ELU(),
             nn.Linear(hidden_dim, hidden_dim),
             nn.ELU(),
@@ -44,8 +37,6 @@ class Encoder(nn.Module):
         self.fc_sigma = nn.Linear(hidden_dim, z_dim)
 
     def forward(self, x):
-        x = x.view(-1, 784)
-
         hidden = self.features(x)
 
         z_mu = self.fc_mu(hidden)
@@ -53,29 +44,27 @@ class Encoder(nn.Module):
         return z_mu, z_var
 
 
-class VAE(nn.Module):
-    """ MNIST VAE """
+class FCMNISTVAE(VAE):
+    """docstring for MNISTVAE"""
 
     def __init__(self, z_dim=20, hidden_dim=400, use_cuda=True):
-        super(VAE, self).__init__()
-        self.z_dim = z_dim
-        self.hidden_dim = hidden_dim
-        self.use_cuda = use_cuda
-
-        self.encoder = Encoder(z_dim, hidden_dim)
-        self.decoder = Decoder(z_dim, hidden_dim)
-
-        if use_cuda:
-            self.cuda()
-
-    def encode(self, input):
-        return self.encoder(input)
-
-    def decode(self, input):
-        return self.decoder(input)
+        super(FCMNISTVAE, self).__init__(encoder=Encoder(z_dim, hidden_dim), decoder=Decoder(z_dim, hidden_dim),
+                                         use_cuda=use_cuda)
 
     def forward(self, input):
-        mu, var = self.encoder(input)
-        z = rnormal(mu, torch.sqrt(var))
+        input = input.view((-1, 784))
+        return super().forward(input)
 
-        return mu, var, self.decoder(z)
+
+class FCMNISTCVAE(CVAE):
+    """docstring for MNISTVAE"""
+
+    def __init__(self, z_dim=20, hidden_dim=400, use_cuda=True):
+        super(FCMNISTCVAE, self).__init__(encoder=Encoder(z_dim, hidden_dim, input_dim=784 + 10),
+                                          decoder=Decoder(z_dim + 10, hidden_dim),
+                                          use_cuda=use_cuda)
+
+    def forward(self, input, labels):
+        input = input.view((-1, 784))
+
+        return super().forward(input, labels)

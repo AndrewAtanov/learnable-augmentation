@@ -2,44 +2,45 @@ import argparse
 import numpy as np
 import torch
 from torch.autograd import Variable
-from models.mnist_model import VAE
 import utils
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--data', default='mnist')
-parser.add_argument('--cuda', dest='cuda', action='store_true')
-parser.add_argument('--no-cuda', dest='cuda', action='store_false')
-parser.set_defaults(cuda=True)
+parser.add_argument('--model', default='fcmnistvae')
 parser.add_argument('--seed', default=42, type=int)
 parser.add_argument('--test_frequency', default=10, type=int)
 parser.add_argument('--num_epochs', default=100, type=int)
 parser.add_argument('--batch_size', default=128, type=int)
 parser.add_argument('--z_dim', default=20, type=int)
-
+parser.add_argument('--hidden_dim', default=400, type=int, help='FC size for FC MNIST')
 args = parser.parse_args()
+
+args.cuda = torch.cuda.device_count() != 0
 
 torch.manual_seed(args.seed)
 torch.cuda.manual_seed(args.seed)
 np.random.seed(args.seed)
 
-vae = VAE(z_dim=args.z_dim, use_cuda=args.cuda)
+# vae = FCMNISTVAE(z_dim=args.z_dim, use_cuda=args.cuda)
+vae = utils.get_model(**vars(args))
 optimizer = torch.optim.Adam(vae.parameters())
-criterion = utils.ELBOLoss(use_cuda=args.cuda)
+criterion = utils.VAEELBOLoss(use_cuda=args.cuda)
 
 trainloader, testloader = utils.get_dataloaders(data=args.data, train_bs=args.batch_size)
 
 for epoch in range(args.num_epochs):
     train_loss = 0.
 
-    for i, (batch, _) in enumerate(trainloader):
+    for i, (batch, y) in enumerate(trainloader):
         optimizer.zero_grad()
 
         if args.cuda:
             batch = batch.cuda()
+            y = y.cuda()
 
-        batch = Variable(batch)
-        mu, sigma, reconstructed = vae(batch)
+        batch, y = Variable(batch), Variable(y)
+        mu, sigma, reconstructed = vae(batch, y) if 'cvae' in args.model else vae(batch)
 
         loss = criterion(reconstructed, batch.view(-1, 784), mu, sigma)
 
@@ -52,12 +53,13 @@ for epoch in range(args.num_epochs):
 
     if epoch % args.test_frequency == 0:
         test_loss = 0.
-        for i, (batch, _) in enumerate(trainloader):
+        for i, (batch, y) in enumerate(trainloader):
             if args.cuda:
                 batch = batch.cuda()
+                y = y.cuda()
 
-            batch = Variable(batch)
-            mu, sigma, reconstructed = vae(batch)
+            batch, y = Variable(batch), Variable(y)
+            mu, sigma, reconstructed = vae(batch, y) if 'cvae' in args.model else vae(batch)
 
             loss = criterion(reconstructed, batch.view(-1, 784), mu, sigma)
             test_loss += loss.data.cpu()[0]

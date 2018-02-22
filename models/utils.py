@@ -1,7 +1,9 @@
 import torch
+from torch.autograd import Variable
 
-print('aAA')
 
-def rnormal(mean, sigma, batch_size):
-    eps = torch.randn((batch_size, ) + mean.shape)
-    return eps * sigma.view((1,) + sigma.shape) + mean.view((1,) + mean.shape)
+def rnormal(mean, sigma):
+    eps = Variable(torch.randn(mean.shape))
+    if mean.data.is_cuda:
+        eps = eps.cuda()
+    return eps * sigma + mean
