@@ -34,6 +34,9 @@ class CVAE(VAE):
 
     def __init__(self, encoder, decoder, use_cuda=True):
         super(CVAE, self).__init__(encoder, decoder, use_cuda=use_cuda)
+        self.use_cuda = use_cuda
+        self.encoder = encoder
+        self.decoder = decoder
 
     def forward(self, input, labels):
         mu, var = self.encode(torch.cat([input, labels], dim=1))
