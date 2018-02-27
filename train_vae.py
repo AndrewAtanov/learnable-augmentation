@@ -71,6 +71,6 @@ if __name__ == '__main__':
     optimizer = torch.optim.Adam(vae.parameters())
     criterion = utils.VAEELBOLoss(use_cuda=args.cuda)
 
-    trainloader, testloader = utils.get_dataloaders(data=args.data, train_bs=args.batch_size)
+    trainloader, testloader = utils.get_dataloaders(data=args.data, train_bs=args.batch_size, ohe_labels=True)
 
     train(trainloader, testloader, vae, optimizer, criterion, args)
