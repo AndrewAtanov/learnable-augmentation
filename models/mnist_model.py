@@ -33,6 +33,8 @@ class Encoder(nn.Module):
             nn.Linear(hidden_dim, hidden_dim),
             nn.ELU(),
         )
+        self.z_dim = z_dim
+        self.hidden_dim = hidden_dim
         self.fc_mu = nn.Linear(hidden_dim, z_dim)
         self.fc_sigma = nn.Linear(hidden_dim, z_dim)
 

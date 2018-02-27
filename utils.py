@@ -6,20 +6,28 @@ from models.mnist_model import FCMNISTVAE, FCMNISTCVAE
 import numpy as np
 
 
-def get_dataloaders(data='mnist', train_bs=128, test_bs=500, root='./data'):
+def ohe(labels, n_classes):
+    a = np.zeros((len(labels), n_classes))
+    a[np.arange(len(labels)), labels] = 1
+    return a
+
+
+def get_dataloaders(data='mnist', train_bs=128, test_bs=500, root='./data', ohe_labels=False):
     if data == 'mnist':
         to_tensor = transforms.ToTensor()
         trainset = MNIST(root, train=True, download=True, transform=to_tensor)
-        x = trainset.train_labels.numpy()
-        ohe = np.zeros((len(x), 10))
-        ohe[np.arange(ohe.shape[0]), x] = 1
-        trainset.train_labels = torch.from_numpy(ohe.astype(np.float32))
+        if ohe_labels:
+            x = trainset.train_labels.numpy()
+            ohe = np.zeros((len(x), 10))
+            ohe[np.arange(ohe.shape[0]), x] = 1
+            trainset.train_labels = torch.from_numpy(ohe.astype(np.float32))
 
         testset = MNIST(root, train=False, download=True, transform=to_tensor)
-        x = testset.test_labels.numpy()
-        ohe = np.zeros((len(x), 10))
-        ohe[np.arange(ohe.shape[0]), x] = 1
-        testset.test_labels = torch.from_numpy(ohe.astype(np.float32))
+        if ohe_labels:
+            x = testset.test_labels.numpy()
+            ohe = np.zeros((len(x), 10))
+            ohe[np.arange(ohe.shape[0]), x] = 1
+            testset.test_labels = torch.from_numpy(ohe.astype(np.float32))
 
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=train_bs)
     testloader = torch.utils.data.DataLoader(testset, batch_size=test_bs)
