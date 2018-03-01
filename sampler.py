@@ -44,8 +44,9 @@ class VAESampler(nn.Module):
         return batch.data.cpu().view((bs, 1, 28, 28)), y.cpu()
 
     def mix_sampler(self, dataloader, sample_bs):
-        for x, y in dataloader:
-            sample_x, sample_y = self.sample(sample_bs)
-            batch_x = torch.cat((x, sample_x))
-            batch_y = torch.cat((y, sample_y))
-            yield batch_x, batch_y
+        while True:
+            for x, y in dataloader:
+                sample_x, sample_y = self.sample(sample_bs)
+                batch_x = torch.cat((x, sample_x))
+                batch_y = torch.cat((y, sample_y))
+                yield batch_x, batch_y
