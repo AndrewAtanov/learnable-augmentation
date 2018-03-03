@@ -4,6 +4,7 @@ import torch
 from torch import nn
 from models.mnist_model import FCMNISTVAE, FCMNISTCVAE
 import numpy as np
+from sklearn.cross_validation import train_test_split
 
 
 def ohe(labels, n_classes):
@@ -12,10 +13,15 @@ def ohe(labels, n_classes):
     return a
 
 
-def get_dataloaders(data='mnist', train_bs=128, test_bs=500, root='./data', ohe_labels=False):
+def get_dataloaders(data='mnist', train_bs=128, test_bs=500, root='./data', ohe_labels=False, train_fraction=1.):
     if data == 'mnist':
         to_tensor = transforms.ToTensor()
         trainset = MNIST(root, train=True, download=True, transform=to_tensor)
+        if train_fraction < 1.:
+            data, _, labels, _ = train_test_split(trainset.train_data.numpy(), trainset.train_labels.numpy(),
+                                                  stratify=trainset.train_labels.numpy(), train_size=train_fraction)
+            trainset.train_data, trainset.train_labels = torch.ByteTensor(data), torch.LongTensor(labels)
+
         if ohe_labels:
             x = trainset.train_labels.numpy()
             ohe = np.zeros((len(x), 10))
