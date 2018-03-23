@@ -58,7 +58,7 @@ def train(trainloader, testloader, dagan, opt_g, opt_d, args):
 
             d_fake = dagan.discriminator(x_g, input_a)
             g_loss = torch.mean(d_fake[:, 1])
-            acc = (d_fake[:, 1].data.cpu().numpy() < np.log(0.5)).mean()
+            acc = (d_fake[:, 1].data.cpu().numpy() > np.log(0.5)).mean()
             accs.append(acc)
             train_g_loss += g_loss.data.cpu()[0]
             steps += 1
