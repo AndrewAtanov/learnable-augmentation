@@ -31,7 +31,7 @@ def train(trainloader, testloader, vae, optimizer, criterion, args):
 
             if epoch % args.test_frequency == 0:
                 test_loss = 0.
-                for i, (batch, y) in enumerate(trainloader):
+                for i, (batch, y) in enumerate(testloader):
                     if args.cuda:
                         batch = batch.cuda()
                         y = y.cuda()
