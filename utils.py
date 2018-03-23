@@ -56,6 +56,10 @@ def get_dataloaders(data='mnist', train_bs=128, test_bs=500, root='./data', ohe_
                                                   stratify=trainset.train_labels.numpy(), train_size=train_fraction)
             trainset.train_data, trainset.train_labels = torch.ByteTensor(data), torch.LongTensor(labels)
 
+        idx = torch.LongTensor(np.where(trainset.train_labels.numpy() == 0)[0])
+        trainset.train_data = trainset.train_data[idx]
+        trainset.train_labels = trainset.train_labels[idx]
+
         if ohe_labels:
             x = trainset.train_labels.numpy()
             ohe = np.zeros((len(x), 10))
