@@ -1,6 +1,33 @@
 import torch
 from torch import nn
 from .vae import VAE, CVAE
+from collections import OrderedDict
+
+
+class LeNet(nn.Module):
+    def __init__(self):
+        super(LeNet, self).__init__()
+        self.conv_features = nn.Sequential(OrderedDict([
+            ('conv1', nn.Conv2d(1, 20, 5, 1)),
+            ('relu1', nn.ReLU()),
+            ('pool1', nn.MaxPool2d(2)),
+
+            ('conv2', nn.Conv2d(20, 50, 5, 1)),
+            ('relu2', nn.ReLU()),
+            ('pool2', nn.MaxPool2d(2)),
+        ]))
+
+        self.classifier = nn.Sequential(OrderedDict([
+            ('fc1', nn.Linear(16 * 50, 500)),
+            ('relu3', nn.ReLU()),
+            ('fc2', nn.Linear(500, 10)),
+        ]))
+
+    def forward(self, x):
+        out = self.conv_features(x)
+        out = out.view(out.size(0), 16 * 50)
+        out = self.classifier(out)
+        return out
 
 
 class Decoder(nn.Module):

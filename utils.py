@@ -1,10 +1,44 @@
 from torchvision.datasets import MNIST
+import os
 from torchvision import transforms
 import torch
 from torch import nn
 from models.mnist_model import FCMNISTVAE, FCMNISTCVAE
 import numpy as np
 from sklearn.cross_validation import train_test_split
+
+
+class AccCounter:
+    """
+    Class for count accuracy during pass through data with mini-batches.
+    """
+    def __init__(self):
+        self.__n_objects = 0
+        self.__sum = 0
+
+    def add(self, outputs, targets):
+        """
+        Compute and save stats needed for overall accuracy.
+        :param outputs: ndarray of predicted values (logits or probabilities)
+        :param targets: ndarray of labels with the same length as first dimension of _outputs_
+        """
+        self.__sum += np.sum(outputs.argmax(axis=1) == targets)
+        self.__n_objects += outputs.shape[0]
+
+    def acc(self):
+        """
+        Compute current accuracy.
+        :return: float accuracy.
+        """
+        return self.__sum * 1. / self.__n_objects
+
+    def flush(self):
+        """
+        Flush stats.
+        :return:
+        """
+        self.__n_objects = 0
+        self.__sum = 0
 
 
 def ohe(labels, n_classes):
@@ -14,8 +48,8 @@ def ohe(labels, n_classes):
 
 
 def get_dataloaders(data='mnist', train_bs=128, test_bs=500, root='./data', ohe_labels=False, train_fraction=1.):
+    to_tensor = transforms.ToTensor()
     if data == 'mnist':
-        to_tensor = transforms.ToTensor()
         trainset = MNIST(root, train=True, download=True, transform=to_tensor)
         if train_fraction < 1.:
             data, _, labels, _ = train_test_split(trainset.train_data.numpy(), trainset.train_labels.numpy(),
@@ -34,6 +68,13 @@ def get_dataloaders(data='mnist', train_bs=128, test_bs=500, root='./data', ohe_
             ohe = np.zeros((len(x), 10))
             ohe[np.arange(ohe.shape[0]), x] = 1
             testset.test_labels = torch.from_numpy(ohe.astype(np.float32))
+    elif data == 'not-mnist':
+        trainset = MNIST(root=os.path.join(root, 'not-mnist'), train=False,
+                         download=True, transform=to_tensor)
+        testset = MNIST(root=os.path.join(root, 'not-mnist'), train=False,
+                        download=True, transform=to_tensor)
+    else:
+        raise NotImplementedError
 
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=train_bs)
     testloader = torch.utils.data.DataLoader(testset, batch_size=test_bs)
