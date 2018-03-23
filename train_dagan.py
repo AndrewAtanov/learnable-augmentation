@@ -28,7 +28,7 @@ def train(trainloader, testloader, dagan, opt_g, opt_d, args):
 
             d_fake = dagan.discriminator(x_g.detach(), input_a)
             d_real  = dagan.discriminator(input_b, input_a)
-            acc_fake = (d_real[:, 1].data.cpu().numpy() < np.log(0.5)).mean()
+            acc_fake = (d_fake[:, 1].data.cpu().numpy() > np.log(0.5)).mean()
             acc_real = (d_real[:, 0].data.cpu().numpy() > np.log(0.5)).mean()
             acc = (acc_fake + acc_real) / 2
             accs.append(acc)
